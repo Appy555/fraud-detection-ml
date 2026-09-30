@@ -295,18 +295,56 @@ The API will now be available at `http://localhost:8000`.
 
 ---
 
-## 🔄 CI/CD Deployment Workflow
+## 🔄 CI/CD Pipeline Flow & Deployment Architecture
 
-This project includes automated CI/CD via GitHub Actions (`.github/workflows/deploy.yml`):
+This project uses an automated, multi-stage **CI/CD Pipeline** built on **GitHub Actions** (`.github/workflows/deploy.yml`) to ensure that every code change is validated through automated tests before generating production-ready Docker images.
 
-1. **Trigger**: Pushing commits to the `main` branch.
-2. **Automated Pipeline**:
-   - Checks out the repository code.
-   - Authenticates with Docker Hub using repository secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`).
-   - Builds the Docker image.
-   - Pushes two image tags to Docker Hub:
-     - `<username>/fraud-detection-ml:latest`
-     - `<username>/fraud-detection-ml:<commit-sha>`
+### 📊 End-to-End CI/CD Flowchart
+
+```mermaid
+flowchart TD
+    subgraph Trigger["⚡ 1. Trigger Event"]
+        A["Developer commits & pushes code\n(or creates Pull Request on main)"]
+    end
+
+    subgraph CI["🧪 2. Continuous Integration (CI Gate)"]
+        B["Spin up Ubuntu Runner"] --> C["Checkout Code (actions/checkout@v4)"]
+        C --> D["Set up Python 3.12 (actions/setup-python@v5)"]
+        D --> E["Install Dependencies (requirements-api.txt, pytest, httpx)"]
+        E --> F["Run Test Suite (pytest tests/ -v)"]
+        F --> G{"All Tests Pass?"}
+    end
+
+    subgraph Failure["❌ Test Failure"]
+        G -- No --> H["Pipeline Fails & Alerts Developer\n(Docker build is blocked)"]
+    end
+
+    subgraph CD["🚀 3. Continuous Delivery / Deployment (CD)"]
+        G -- Yes --> I["Trigger 'build-and-push' Job"]
+        I --> J["Authenticate to Docker Hub\n(Secrets: DOCKERHUB_USERNAME & TOKEN)"]
+        J --> K["Set up Docker Buildx"]
+        K --> L["Build Production Docker Image\n(python:3.12-slim)"]
+        L --> M["Push Image Tags to Docker Hub:\n1. <username>/fraud-detection-ml:latest\n2. <username>/fraud-detection-ml:<commit-sha>"]
+    end
+
+    subgraph Production["🌐 4. Production Deployment"]
+        M --> N["Cloud Server / Kubernetes / EC2 / Render"]
+        N --> O["Pull & Run Container:\ndocker run -p 8000:8000 ..."]
+        O --> P["Live FastAPI Service (/predict)"]
+    end
+
+    A --> B
+```
+
+### 🔍 Stage-by-Stage Breakdown
+
+| Stage | Action / Step | Purpose & Value |
+| :--- | :--- | :--- |
+| **1. Trigger** | `git push origin main` | Automates pipeline trigger instantly upon code changes. |
+| **2. Test (CI)** | `pytest tests/ -v` | **Quality Gate**: Runs unit tests for health check, predictions, and validation. Prevents broken code from reaching production. |
+| **3. Auth** | `docker/login-action@v3` | Securely logs in using encrypted GitHub Secrets (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`). |
+| **4. Build (CD)** | `docker/build-push-action@v6` | Builds an optimized, lightweight container image. |
+| **5. Tag & Push** | Multi-tagging (`latest`, `SHA`) | Pushes `latest` for auto-deployments and specific commit SHA for **instant rollback capability**. |
 
 ---
 
