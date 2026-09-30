@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FraudGuard AI - Real-Time Credit Card Fraud Detection</title>
+  <meta name="description" content="Production-grade real-time credit card fraud detection system powered by Machine Learning and FastAPI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- Ambient background lighting effects -->
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+
+  <!-- Main Container -->
+  <div class="app-container">
+    
+    <!-- Top Navigation Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">FraudGuard <span class="accent-text">AI</span></h1>
+          <p class="brand-subtitle">Real-Time ML Transaction Screening</p>
+        </div>
+      </div>
+
+      <div class="nav-status-group">
+        <div class="status-pill" id="apiStatusPill">
+          <span class="status-dot pulsing"></span>
+          <span id="apiStatusText">Checking API...</span>
+        </div>
+        <div class="badge-pill">
+          <span class="badge-label">Model Threshold:</span>
+          <span class="badge-value" id="navThresholdValue">0.99</span>
+        </div>
+        <a href="/docs" target="_blank" class="docs-btn" title="Open Interactive Swagger Docs">
+          <span>Swagger API Docs</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Metrics Hero Strip -->
+    <section class="hero-strip">
+      <div class="hero-stat-card">
+        <div class="stat-icon-wrapper blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        </div>
+        <div>
+          <span class="stat-label">Model Architecture</span>
+          <h3 class="stat-value">Pipeline (Scaler + LogReg)</h3>
+        </div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="stat-icon-wrapper green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <span class="stat-label">Precision at 0.99 Cutoff</span>
+          <h3 class="stat-value">86.2% <span class="stat-trend">+High Precision</span></h3>
+        </div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="stat-icon-wrapper purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+        </div>
+        <div>
+          <span class="stat-label">Inference Latency</span>
+          <h3 class="stat-value" id="latencyStat">&lt; 10 ms</h3>
+        </div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="stat-icon-wrapper amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <span class="stat-label">Trained On Imbalance</span>
+          <h3 class="stat-value">0.172% Fraud Rate</h3>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Grid -->
+    <main class="grid-layout">
+
+      <!-- Left Column: Input Form & Presets -->
+      <section class="card glass-card form-panel">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">Transaction Scoring Engine</h2>
+            <p class="card-desc">Simulate live transaction payload or pick a quick test scenario.</p>
+          </div>
+        </div>
+
+        <!-- Quick 1-Click Scenario Buttons -->
+        <div class="preset-section">
+          <span class="preset-title">⚡ 1-Click Test Scenarios:</span>
+          <div class="preset-buttons">
+            <button type="button" class="preset-btn btn-legit" id="btnPresetLegit">
+              <span class="btn-dot green"></span>
+              <span>Normal Grocery ($25.40)</span>
+            </button>
+            <button type="button" class="preset-btn btn-fraud" id="btnPresetFraud">
+              <span class="btn-dot red"></span>
+              <span>Anomalous Attack ($1,499)</span>
+            </button>
+            <button type="button" class="preset-btn btn-suspicious" id="btnPresetSuspicious">
+              <span class="btn-dot amber"></span>
+              <span>Suspicious High ($480)</span>
+            </button>
+            <button type="button" class="preset-btn btn-random" id="btnPresetRandom">
+              <span>🎲 Randomize</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Transaction Input Form -->
+        <form id="fraudForm">
+          <div class="input-row-main">
+            <div class="input-field-group">
+              <label for="inputAmount" class="input-label">
+                <span>Transaction Amount ($)</span>
+                <span class="label-hint">Required</span>
+              </label>
+              <div class="input-prefix-wrapper">
+                <span class="input-currency">$</span>
+                <input type="number" id="inputAmount" step="0.01" min="0" value="149.62" required class="custom-input" />
+              </div>
+            </div>
+
+            <div class="input-field-group">
+              <label for="inputTime" class="input-label">
+                <span>Elapsed Time (seconds)</span>
+                <span class="label-hint">Time delta</span>
+              </label>
+              <input type="number" id="inputTime" step="1" min="0" value="406.0" required class="custom-input" />
+            </div>
+          </div>
+
+          <!-- Threshold Slider Controller -->
+          <div class="threshold-slider-card">
+            <div class="threshold-slider-header">
+              <label for="thresholdSlider" class="slider-label">
+                <span>Decision Threshold Cutoff</span>
+                <span class="info-tooltip" title="Transactions with fraud probability >= this cutoff will be flagged as FRAUD.">ⓘ</span>
+              </label>
+              <span class="slider-current-val" id="sliderValueDisplay">0.99</span>
+            </div>
+            <input type="range" id="thresholdSlider" min="0.50" max="0.99" step="0.01" value="0.99" class="custom-slider" />
+            <div class="slider-ticks">
+              <span>0.50 (Loose)</span>
+              <span>0.75</span>
+              <span>0.90</span>
+              <span class="tick-selected">0.99 (Optimal Production)</span>
+            </div>
+          </div>
+
+          <!-- Accordion for PCA Features V1-V28 -->
+          <details class="pca-accordion" id="pcaAccordion">
+            <summary class="accordion-summary">
+              <div class="summary-left">
+                <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                <span>PCA Component Vectors (V1 - V28)</span>
+              </div>
+              <span class="accordion-badge" id="pcaSummaryBadge">28 Features Loaded</span>
+            </summary>
+            
+            <div class="pca-controls-bar">
+              <button type="button" class="mini-action-btn" id="btnZeroPca">Zero Out All</button>
+              <button type="button" class="mini-action-btn" id="btnJitterPca">Apply Subtle Jitter</button>
+            </div>
+
+            <div class="pca-grid" id="pcaInputsContainer">
+              <!-- Dynamically populated 28 inputs -->
+            </div>
+          </details>
+
+          <!-- Submit Button -->
+          <div class="action-btn-row">
+            <button type="submit" id="btnSubmitPredict" class="primary-predict-btn">
+              <span class="btn-text">Analyze Transaction Security</span>
+              <div class="btn-spinner hidden" id="btnSpinner"></div>
+              <svg class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Real-time Analysis HUD & Verdict -->
+      <section class="card glass-card result-panel">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">Live Risk Assessment HUD</h2>
+            <p class="card-desc">Instant decision verdict, probability gauge, and breakdown.</p>
+          </div>
+          <span class="hud-live-tag">LIVE FEED</span>
+        </div>
+
+        <!-- Empty / Initial State -->
+        <div class="result-placeholder" id="resultPlaceholder">
+          <div class="pulse-radar">
+            <div class="radar-circle circle-1"></div>
+            <div class="radar-circle circle-2"></div>
+            <div class="radar-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+          </div>
+          <h3 class="placeholder-title">Ready for Analysis</h3>
+          <p class="placeholder-desc">Submit a transaction or click any 1-Click Scenario to perform real-time ML fraud screening.</p>
+        </div>
+
+        <!-- Active Result Card (Hidden by default) -->
+        <div class="result-content hidden" id="resultContent">
+          
+          <!-- Large Verdict Banner -->
+          <div class="verdict-banner" id="verdictBanner">
+            <div class="verdict-icon-container" id="verdictIcon">
+              <!-- Injected dynamically -->
+            </div>
+            <div class="verdict-text-group">
+              <span class="verdict-label" id="verdictSubLabel">TRANSACTION CLASSIFICATION</span>
+              <h3 class="verdict-status" id="verdictStatusText">APPROVED</h3>
+            </div>
+            <div class="verdict-risk-tag" id="verdictRiskTag">LOW RISK</div>
+          </div>
+
+          <!-- Probability Gauge & Circular Dial -->
+          <div class="risk-gauge-container">
+            <div class="radial-meter">
+              <svg class="radial-svg" viewBox="0 0 160 160">
+                <circle class="meter-bg" cx="80" cy="80" r="70"></circle>
+                <circle class="meter-fill" id="meterFillCircle" cx="80" cy="80" r="70"></circle>
+              </svg>
+              <div class="meter-center">
+                <span class="meter-percentage" id="meterPercentageText">0.0%</span>
+                <span class="meter-subtext">Fraud Probability</span>
+              </div>
+            </div>
+
+            <!-- Risk Progress Indicator Bar -->
+            <div class="risk-bar-wrapper">
+              <div class="risk-bar-labels">
+                <span>0% Safe</span>
+                <span class="threshold-indicator-label" id="thresholdIndicatorLabel">Threshold 99.0%</span>
+                <span>100% Critical</span>
+              </div>
+              <div class="risk-bar-track">
+                <div class="risk-bar-fill" id="riskBarFill" style="width: 5%;"></div>
+                <div class="threshold-marker" id="thresholdMarker" style="left: 99%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Assessment Details Grid -->
+          <div class="assessment-details-grid">
+            <div class="detail-tile">
+              <span class="detail-tile-label">Raw Fraud Probability</span>
+              <span class="detail-tile-value mono" id="detailRawProb">0.059328</span>
+            </div>
+            <div class="detail-tile">
+              <span class="detail-tile-label">Decision Threshold</span>
+              <span class="detail-tile-value mono" id="detailThreshold">0.990000</span>
+            </div>
+            <div class="detail-tile">
+              <span class="detail-tile-label">Scored Amount</span>
+              <span class="detail-tile-value" id="detailAmount">$149.62</span>
+            </div>
+            <div class="detail-tile">
+              <span class="detail-tile-label">Action Recommendation</span>
+              <span class="detail-tile-value highlight" id="detailAction">ALLOW PAYMENT</span>
+            </div>
+          </div>
+
+          <!-- Feature Impact / Anomaly Highlights -->
+          <div class="anomalies-box" id="anomaliesBox">
+            <h4 class="anomalies-title">Key Vector Influences</h4>
+            <div class="vector-tags" id="vectorTagsContainer">
+              <!-- Dynamically populated top vectors -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Section: Live Audit History Table -->
+    <section class="card glass-card audit-panel">
+      <div class="audit-header">
+        <div>
+          <h2 class="card-title">Session Audit History</h2>
+          <p class="card-desc">Log of all transactions evaluated during this active session.</p>
+        </div>
+        <button type="button" class="mini-action-btn" id="btnClearHistory">Clear Log</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Amount ($)</th>
+              <th>Time (s)</th>
+              <th>Fraud Probability</th>
+              <th>Active Threshold</th>
+              <th>Verdict</th>
+              <th>Risk Level</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody">
+            <tr id="emptyAuditRow">
+              <td colspan="8" class="empty-table-msg">No transactions analyzed yet. Try submitting one above!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>FraudGuard AI &copy; 2026 &bull; Production ML Pipeline &bull; FastAPI + Scikit-Learn + Docker</p>
+    </footer>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

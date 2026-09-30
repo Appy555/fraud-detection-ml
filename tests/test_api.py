@@ -5,8 +5,15 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_home_endpoint():
+def test_home_ui_endpoint():
     response = client.get("/")
+    assert response.status_code == 200
+    # Should serve HTML dashboard
+    assert "text/html" in response.headers.get("content-type", "") or "FraudGuard" in response.text
+
+
+def test_api_health_endpoint():
+    response = client.get("/api/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "online"

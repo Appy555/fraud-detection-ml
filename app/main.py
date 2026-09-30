@@ -1,13 +1,15 @@
 import os
 from typing import Dict, Any, Union
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 import joblib
 import pandas as pd
 
 app = FastAPI(
-    title="Credit Card Fraud Detection API",
-    description="Real-time Machine Learning API for detecting fraudulent credit card transactions.",
+    title="FraudGuard AI - Credit Card Fraud Detection API",
+    description="Production-grade real-time Machine Learning API & Dashboard for detecting fraudulent credit card transactions.",
     version="1.0.0"
 )
 
@@ -15,6 +17,11 @@ app = FastAPI(
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "fraud_model.pkl")
 THRESHOLD_PATH = os.path.join(BASE_DIR, "model", "threshold.pkl")
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+# Mount static files directory if available
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Load final trained pipeline (StandardScaler + LogisticRegression)
 try:
@@ -85,6 +92,19 @@ class TransactionInput(BaseModel):
 
 @app.get("/")
 def home():
+    index_file = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return {
+        "status": "online",
+        "service": "Fraud Detection API",
+        "docs_url": "/docs",
+        "threshold": threshold
+    }
+
+
+@app.get("/api/health")
+def health():
     return {
         "status": "online",
         "service": "Fraud Detection API",
